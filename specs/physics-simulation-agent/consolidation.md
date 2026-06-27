@@ -18,6 +18,15 @@ Physics Simulation Agent MVP 主线已经形成一个本地可运行闭环：
 
 当前 release readiness 为 `ready_with_limitations`。原因是本机没有检测到 OpenFOAM 或 Docker，所以真实 smoke test 已优雅跳过；mock 全流程和核心测试已通过。
 
+## Goal Mode Execution
+
+本轮补齐了“进入 Codex 目标模式并发送 `/goal` 提示词”的流程证据。之前已经生成了 9 个 goal 文件，也实际执行了多个目标，但没有把“目标模式执行”作为独立门槛记录在 consolidation 中。
+
+当前记录见：
+
+- `specs/physics-simulation-agent/goal-mode-execution.md`
+- `specs/physics-simulation-agent/goals/README.md`
+
 ## Plan Status
 
 | Plan | Status | Evidence |
@@ -44,6 +53,8 @@ Physics Simulation Agent MVP 主线已经形成一个本地可运行闭环：
 - Readiness artifact:
   - `physics-simulation-agent/release-readiness/release-readiness.md`
   - `physics-simulation-agent/release-readiness/release-readiness.json`
+- Goal-mode execution record:
+  - `specs/physics-simulation-agent/goal-mode-execution.md`
 
 ## Current Product Path
 
