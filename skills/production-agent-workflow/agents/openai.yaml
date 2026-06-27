@@ -1,0 +1,4 @@
+interface:
+  display_name: "Production Agent Workflow"
+  short_description: "PRD-to-goal workflow for production agents"
+  default_prompt: "Use $production-agent-workflow to turn this agent idea into PRD, plans, goals, implementation loops, and consolidation."

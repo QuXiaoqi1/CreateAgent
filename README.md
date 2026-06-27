@@ -10,6 +10,9 @@ worked example: Physics Simulation Agent.
   OpenFOAM case generation, execution, delivery, readiness, and workspace state.
 - `gh-physics-sim/`: GitHub CLI extension exposing the local workflow as
   `gh physics-sim`.
+- `skills/production-agent-workflow/`: reusable Codex skill that distills the
+  PRD -> plans -> goals -> goal-mode execution -> consolidation agent
+  development workflow.
 - `specs/cfd-openfoam-agent/`: earlier CFD/OpenFOAM-focused planning artifacts.
 
 ## Verify
