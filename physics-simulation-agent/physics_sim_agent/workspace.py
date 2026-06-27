@@ -32,6 +32,11 @@ WORKFLOW_STAGES = (
     "run_completed",
     "report_generated",
     "package_ready",
+    "blocked",
+    "draft_only",
+    "human_review",
+    "skipped",
+    "failed",
 )
 
 

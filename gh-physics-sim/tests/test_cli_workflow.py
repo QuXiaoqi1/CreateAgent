@@ -45,12 +45,18 @@ class GhPhysicsSimCliTests(unittest.TestCase):
             self.run_cli(cwd, "run", "--workspace", str(workspace))
             self.run_cli(cwd, "report", "--workspace", str(workspace))
             self.run_cli(cwd, "package", "--workspace", str(workspace))
+            status = self.run_cli(cwd, "status", "--workspace", str(workspace))
 
             task = json.loads((workspace / "tasks" / "pipe-demo" / "task.json").read_text(encoding="utf-8"))
             package_report_exists = (workspace / "package" / "report.md").exists()
             run_script_exists = (workspace / "solver-input" / "openfoam-case" / "run.sh").exists()
+            workspace_metadata = json.loads((workspace / "state" / "workspace.json").read_text(encoding="utf-8"))
 
         self.assertEqual(task["stage"], "package_ready")
+        self.assertEqual(task["artifacts"][0]["kind"], "table")
+        self.assertEqual(task["artifacts"][0]["path"], "inputs/params.csv")
+        self.assertIn("workflowStages", workspace_metadata)
+        self.assertIn('"stage": "package_ready"', status.stdout)
         self.assertTrue(package_report_exists)
         self.assertTrue(run_script_exists)
 

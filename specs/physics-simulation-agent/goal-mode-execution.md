@@ -48,6 +48,37 @@
 | 08 Testing And Production Readiness | `readiness.py`, `release-readiness/`, `tests/test_readiness.py` |
 | 09 GitHub CLI Extension | `gh-physics-sim/`, `tests/test_cli_workflow.py` |
 
+## Goal Mode Run: 2026-06-27 Follow-up Loop
+
+本轮已在 active goal/目标模式下执行。用户发送的目标提示词为：
+
+```text
+我需要补上这个步骤，现在调整为目标模式，发送提示词，开发一轮后把所有的plan.md整合为一个consolidation.md
+```
+
+本轮开发目标选择：
+
+- 来源：`specs/physics-simulation-agent/consolidation.md` 的下一轮优先级 1。
+- 目标：统一 `gh-physics-sim init/new/add-* /status` 与 `PlatformWorkspace`，让 CLI 的工作区、任务状态和 artifact registry 走核心平台 API。
+
+本轮实现：
+
+- `gh-physics-sim/lib/physics_sim_cli.py` 新增 `init`、`new`、`add-file`、`add-table`、`status` 命令。
+- `gh-physics-sim/gh-physics-sim` 将这些命令转发给 Python platform bridge。
+- `physics-simulation-agent/physics_sim_agent/workspace.py` 扩展真实 workflow 状态：`blocked`、`draft_only`、`human_review`、`skipped`、`failed`。
+- `gh-physics-sim/tests/test_cli_workflow.py` 增加 artifact registry 和 status 输出验证。
+
+本轮验证：
+
+- `python3 -m unittest discover physics-simulation-agent/tests`
+- `python3 -m unittest discover gh-physics-sim/tests`
+
+本轮 consolidation 要求：
+
+- 重新读取 9 个 `plans/*/plan.md`。
+- 将本轮开发证据整合进 `specs/physics-simulation-agent/consolidation.md`。
+- 标明当前仍未完成的是 real OpenFOAM/Docker smoke、OCR/screenshot ingestion、PDF/plot 等后续能力，而不是目标模式流程本身。
+
 ## Verification
 
 - Core tests: `python3 -m unittest discover physics-simulation-agent/tests`

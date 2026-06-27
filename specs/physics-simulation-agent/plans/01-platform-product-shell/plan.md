@@ -65,7 +65,7 @@ This plan covers the product shell shared by every physics domain. It does not i
 - Implemented workspace/task/artifact/checkpoint primitives in `physics-simulation-agent/physics_sim_agent/workspace.py`.
 - Exported platform shell APIs from `physics-simulation-agent/physics_sim_agent/__init__.py`.
 - Added workspace tests in `physics-simulation-agent/tests/test_workspace.py`.
-- The GitHub CLI extension uses the same local workspace layout under `.physics-sim/`.
+- The GitHub CLI extension now delegates `init`, `new`, `add-file`, `add-table`, and `status` to `PlatformWorkspace`, so task state and artifact registry are shared with the core platform.
 - Verification command: `python3 -m unittest discover physics-simulation-agent/tests`
 - Latest result: 46 tests passed.
 

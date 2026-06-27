@@ -59,29 +59,6 @@ workspace_from_args() {
   printf '%s\n' "$workspace"
 }
 
-ensure_workspace() {
-  local workspace="$1"
-  mkdir -p \
-    "$workspace/inputs" \
-    "$workspace/state" \
-    "$workspace/schema" \
-    "$workspace/solver-input" \
-    "$workspace/logs" \
-    "$workspace/results" \
-    "$workspace/reports" \
-    "$workspace/package" \
-    "$workspace/tasks"
-}
-
-require_workspace() {
-  local workspace="$1"
-  [ -d "$workspace" ] || die "workspace not found: $workspace (run: gh physics-sim init --workspace $workspace)"
-}
-
-json_escape() {
-  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
-}
-
 cmd_doctor() {
   local workspace
   workspace="$(workspace_from_args "$@")"
@@ -128,125 +105,6 @@ cmd_doctor() {
   fi
 }
 
-cmd_init() {
-  local workspace
-  workspace="$(workspace_from_args "$@")"
-  ensure_workspace "$workspace"
-  cat > "$workspace/state/workspace.json" <<EOF
-{
-  "version": "$VERSION",
-  "workspace": "$(json_escape "$workspace")",
-  "createdBy": "gh-physics-sim"
-}
-EOF
-  printf 'Initialized physics simulation workspace: %s\n' "$workspace"
-}
-
-cmd_new() {
-  local workspace case_name problem
-  workspace="$(workspace_from_args "$@")"
-  require_workspace "$workspace"
-
-  problem=""
-  case_name=""
-  local args=("$@")
-  local i=0
-  while [ "$i" -lt "${#args[@]}" ]; do
-    case "${args[$i]}" in
-      --workspace)
-        i=$((i + 1))
-        ;;
-      --case-name)
-        i=$((i + 1))
-        [ "$i" -lt "${#args[@]}" ] || die "--case-name requires a value"
-        case_name="${args[$i]}"
-        ;;
-      --*)
-        die "unknown flag: ${args[$i]}"
-        ;;
-      *)
-        if [ -z "$problem" ]; then
-          problem="${args[$i]}"
-        fi
-        ;;
-    esac
-    i=$((i + 1))
-  done
-
-  [ -n "$problem" ] || die "missing simulation problem text"
-  if [ -z "$case_name" ]; then
-    case_name="task-$(date +%Y%m%d-%H%M%S)"
-  fi
-
-  local task_dir="$workspace/tasks/$case_name"
-  mkdir -p "$task_dir"
-  cat > "$task_dir/task.json" <<EOF
-{
-  "id": "$(json_escape "$case_name")",
-  "problem": "$(json_escape "$problem")",
-  "stage": "created",
-  "mode": "mock"
-}
-EOF
-  printf '%s\n' "$case_name" > "$workspace/state/current_task"
-  printf 'Created simulation task: %s\n' "$case_name"
-}
-
-cmd_add_input() {
-  local kind="$1"
-  shift
-  local workspace
-  workspace="$(workspace_from_args "$@")"
-  require_workspace "$workspace"
-
-  local src=""
-  for arg in "$@"; do
-    case "$arg" in
-      --workspace)
-        shift
-        ;;
-      --*)
-        ;;
-      *)
-        if [ -z "$src" ]; then
-          src="$arg"
-        fi
-        ;;
-    esac
-  done
-
-  [ -n "$src" ] || die "missing input path"
-  [ -f "$src" ] || die "input file not found: $src"
-  cp "$src" "$workspace/inputs/"
-  printf 'Registered %s input: %s\n' "$kind" "$src"
-}
-
-current_task() {
-  local workspace="$1"
-  require_workspace "$workspace"
-  [ -f "$workspace/state/current_task" ] || die "no current task (run: gh physics-sim new ...)"
-  cat "$workspace/state/current_task"
-}
-
-cmd_status() {
-  local workspace task task_file
-  workspace="$(workspace_from_args "$@")"
-  task="$(current_task "$workspace")"
-  task_file="$workspace/tasks/$task/task.json"
-  [ -f "$task_file" ] || die "task file missing: $task_file"
-  printf 'Current task: %s\n' "$task"
-  cat "$task_file"
-}
-
-write_stage_artifact() {
-  local workspace="$1"
-  local stage="$2"
-  local file="$3"
-  ensure_workspace "$workspace"
-  printf '%s\n' "$stage" > "$workspace/state/last_stage"
-  printf '%s\n' "$stage" > "$file"
-}
-
 cmd_stage() {
   local stage="$1"
   shift
@@ -269,23 +127,8 @@ main() {
     doctor)
       cmd_doctor "$@"
       ;;
-    init)
-      cmd_init "$@"
-      ;;
-    new)
-      cmd_new "$@"
-      ;;
-    add-file)
-      cmd_add_input "file" "$@"
-      ;;
-    add-table)
-      cmd_add_input "table" "$@"
-      ;;
-    draft|validate|generate|run|report|package)
+    init|new|add-file|add-table|status|draft|validate|generate|run|report|package)
       cmd_stage "$cmd" "$@"
-      ;;
-    status)
-      cmd_status "$@"
       ;;
     *)
       die "unknown command: $cmd"

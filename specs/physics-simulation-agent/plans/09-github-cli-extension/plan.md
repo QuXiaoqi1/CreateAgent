@@ -126,7 +126,8 @@ gh physics-sim package
 
 - Implemented GitHub CLI entrypoint in `gh-physics-sim/gh-physics-sim`.
 - Added platform bridge in `gh-physics-sim/lib/physics_sim_cli.py`.
-- `draft`, `validate`, `generate`, `run`, `report`, and `package` now call Physics Simulation Agent core modules instead of writing mock placeholders.
+- `init`, `new`, `add-file`, `add-table`, `status`, `draft`, `validate`, `generate`, `run`, `report`, and `package` now call Physics Simulation Agent core modules instead of writing mock placeholders.
+- CLI workflow tests verify artifact registration under `PlatformWorkspace` and status output from the shared task state.
 - Added CLI integration test in `gh-physics-sim/tests/test_cli_workflow.py`.
 - Verification commands:
   - `python3 -m unittest discover gh-physics-sim/tests`

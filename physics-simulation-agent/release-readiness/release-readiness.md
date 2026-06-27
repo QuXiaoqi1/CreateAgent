@@ -1,7 +1,7 @@
 # Physics Simulation Agent Release Readiness
 
 Overall status: `ready_with_limitations`
-Generated at: `2026-06-26T17:19:24.965530+00:00`
+Generated at: `2026-06-27T05:57:32.052232+00:00`
 
 ## Checks
 

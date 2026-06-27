@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Sequence, Tuple
 
@@ -33,6 +34,7 @@ from physics_sim_agent import (  # noqa: E402
     EnvironmentCapability,
     ExecutionSummary,
     OpenFOAMAdapter,
+    PlatformWorkspace,
     PhysicsProblemSchema,
     StageResult,
     build_delivery_package,
@@ -54,6 +56,16 @@ def main(argv: Sequence[str]) -> int:
         return _die("missing bridge command")
     command, args = argv[0], list(argv[1:])
     try:
+        if command == "init":
+            return cmd_init(args)
+        if command == "new":
+            return cmd_new(args)
+        if command == "add-file":
+            return cmd_add_input("file", args)
+        if command == "add-table":
+            return cmd_add_input("table", args)
+        if command == "status":
+            return cmd_status(args)
         if command == "draft":
             return cmd_draft(args)
         if command == "validate":
@@ -73,6 +85,44 @@ def main(argv: Sequence[str]) -> int:
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
+
+
+def cmd_init(args: Sequence[str]) -> int:
+    workspace, _ = _workspace_from_args(args, require_exists=False)
+    PlatformWorkspace(workspace).initialize()
+    print(f"Initialized physics simulation workspace: {workspace}")
+    return 0
+
+
+def cmd_new(args: Sequence[str]) -> int:
+    workspace, remaining = _workspace_from_args(args)
+    problem, case_name, mode = _parse_new_args(remaining)
+    if not problem:
+        raise PlatformError("missing simulation problem text")
+    if case_name is None:
+        case_name = "task-" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    task = PlatformWorkspace(workspace).create_task(case_name, problem, mode=mode)
+    print(f"Created simulation task: {task.id}")
+    return 0
+
+
+def cmd_add_input(kind: str, args: Sequence[str]) -> int:
+    workspace, remaining = _workspace_from_args(args)
+    source = _first_positional(remaining)
+    if source is None:
+        raise PlatformError("missing input path")
+    artifact = PlatformWorkspace(workspace).attach_input(source, kind=kind)
+    print(f"Registered {kind} input: {artifact.source}")
+    print(f"Artifact: {artifact.path}")
+    return 0
+
+
+def cmd_status(args: Sequence[str]) -> int:
+    workspace, _ = _workspace_from_args(args)
+    task = PlatformWorkspace(workspace).load_task()
+    print(f"Current task: {task.id}")
+    print(json.dumps(task.to_dict(), ensure_ascii=False, indent=2, sort_keys=True))
+    return 0
 
 
 def cmd_draft(args: Sequence[str]) -> int:
@@ -201,7 +251,7 @@ class PlatformError(Exception):
         self.exit_code = exit_code
 
 
-def _workspace_from_args(args: Sequence[str]) -> Tuple[Path, List[str]]:
+def _workspace_from_args(args: Sequence[str], require_exists: bool = True) -> Tuple[Path, List[str]]:
     workspace = DEFAULT_WORKSPACE
     remaining: List[str] = []
     index = 0
@@ -216,9 +266,43 @@ def _workspace_from_args(args: Sequence[str]) -> Tuple[Path, List[str]]:
             remaining.append(arg)
         index += 1
     workspace_path = Path(workspace)
-    if not workspace_path.is_dir():
+    if require_exists and not workspace_path.is_dir():
         raise PlatformError(f"workspace not found: {workspace_path}")
     return workspace_path, remaining
+
+
+def _parse_new_args(args: Sequence[str]) -> Tuple[str, str | None, str]:
+    problem = ""
+    case_name = None
+    mode = "mock"
+    index = 0
+    while index < len(args):
+        arg = args[index]
+        if arg == "--case-name":
+            index += 1
+            if index >= len(args):
+                raise PlatformError("--case-name requires a value")
+            case_name = args[index]
+        elif arg == "--mode":
+            index += 1
+            if index >= len(args):
+                raise PlatformError("--mode requires a value")
+            mode = args[index]
+            if mode not in {"mock", "auto"}:
+                raise PlatformError("--mode must be mock or auto")
+        elif arg.startswith("--"):
+            raise PlatformError(f"unknown flag: {arg}")
+        elif not problem:
+            problem = arg
+        index += 1
+    return problem, case_name, mode
+
+
+def _first_positional(args: Sequence[str]) -> str | None:
+    for arg in args:
+        if not arg.startswith("--"):
+            return arg
+    return None
 
 
 def _flag_value(args: Sequence[str], flag: str) -> str | None:
@@ -233,24 +317,17 @@ def _flag_value(args: Sequence[str], flag: str) -> str | None:
 
 
 def _load_current_task(workspace: Path) -> Dict[str, Any]:
-    current = workspace / "state" / "current_task"
-    if not current.exists():
+    try:
+        return PlatformWorkspace(workspace).load_task().to_dict()
+    except FileNotFoundError:
         raise PlatformError("no current task; run new first")
-    task_id = current.read_text(encoding="utf-8").strip()
-    task_path = workspace / "tasks" / task_id / "task.json"
-    if not task_path.exists():
-        raise PlatformError(f"task file missing: {task_path}")
-    return json.loads(task_path.read_text(encoding="utf-8"))
 
 
 def _update_task(workspace: Path, stage: str) -> None:
-    current = workspace / "state" / "current_task"
-    task_id = current.read_text(encoding="utf-8").strip()
-    task_path = workspace / "tasks" / task_id / "task.json"
-    task = json.loads(task_path.read_text(encoding="utf-8"))
-    task["stage"] = stage
-    task_path.write_text(json.dumps(task, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    (workspace / "state" / "last_stage").write_text(stage + "\n", encoding="utf-8")
+    try:
+        PlatformWorkspace(workspace).set_stage(stage)
+    except FileNotFoundError:
+        raise PlatformError("no current task; run new first")
 
 
 def _table_artifacts(workspace: Path) -> Iterable[Any]:

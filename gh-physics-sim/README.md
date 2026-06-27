@@ -12,8 +12,9 @@ gh physics-sim status
 ```
 
 The current version is local-first. It uses the platform Python modules for
-schema drafting, validation, OpenFOAM case generation, mock/auto execution,
-reporting, and package assembly. It does not require GitHub authentication.
+workspace/task state, artifact registration, schema drafting, validation,
+OpenFOAM case generation, mock/auto execution, reporting, and package assembly.
+It does not require GitHub authentication.
 
 ## Local Install
 
