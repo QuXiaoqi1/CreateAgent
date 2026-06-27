@@ -1,0 +1,296 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VERSION="0.1.0-dev"
+DEFAULT_WORKSPACE=".physics-sim"
+
+usage() {
+  cat <<'EOF'
+gh physics-sim - local Physics Simulation Agent CLI
+
+Usage:
+  gh physics-sim --help
+  gh physics-sim version
+  gh physics-sim doctor
+  gh physics-sim init [--workspace .physics-sim]
+  gh physics-sim new "simulate airflow through a 2D pipe" [--case-name pipe-demo] [--workspace .physics-sim]
+  gh physics-sim add-file ./diagram.png [--workspace .physics-sim]
+  gh physics-sim add-table ./params.xlsx [--workspace .physics-sim]
+  gh physics-sim draft [--workspace .physics-sim]
+  gh physics-sim validate [--workspace .physics-sim]
+  gh physics-sim generate [--workspace .physics-sim]
+  gh physics-sim run [--mode mock|auto] [--workspace .physics-sim]
+  gh physics-sim status [--workspace .physics-sim]
+  gh physics-sim report [--workspace .physics-sim]
+  gh physics-sim package [--workspace .physics-sim]
+
+This is an MVP GitHub CLI extension. The workflow is local-first, delegates
+simulation stages to the platform core, and does not require GitHub auth.
+EOF
+}
+
+die() {
+  printf 'error: %s\n' "$*" >&2
+  exit 1
+}
+
+script_dir() {
+  cd "$(dirname "${BASH_SOURCE[0]}")" && pwd
+}
+
+bridge() {
+  local root
+  root="${PHYSICS_SIM_AGENT_ROOT:-$(script_dir)/../physics-simulation-agent}"
+  PHYSICS_SIM_AGENT_ROOT="$root" python3 "$(script_dir)/lib/physics_sim_cli.py" "$@"
+}
+
+workspace_from_args() {
+  local workspace="$DEFAULT_WORKSPACE"
+  local args=("$@")
+  local i=0
+  while [ "$i" -lt "${#args[@]}" ]; do
+    if [ "${args[$i]}" = "--workspace" ]; then
+      i=$((i + 1))
+      [ "$i" -lt "${#args[@]}" ] || die "--workspace requires a value"
+      workspace="${args[$i]}"
+    fi
+    i=$((i + 1))
+  done
+  printf '%s\n' "$workspace"
+}
+
+ensure_workspace() {
+  local workspace="$1"
+  mkdir -p \
+    "$workspace/inputs" \
+    "$workspace/state" \
+    "$workspace/schema" \
+    "$workspace/solver-input" \
+    "$workspace/logs" \
+    "$workspace/results" \
+    "$workspace/reports" \
+    "$workspace/package" \
+    "$workspace/tasks"
+}
+
+require_workspace() {
+  local workspace="$1"
+  [ -d "$workspace" ] || die "workspace not found: $workspace (run: gh physics-sim init --workspace $workspace)"
+}
+
+json_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+cmd_doctor() {
+  local workspace
+  workspace="$(workspace_from_args "$@")"
+
+  printf 'Physics Simulation Agent doctor\n'
+  printf 'version: %s\n' "$VERSION"
+  printf 'cwd: %s\n' "$(pwd)"
+
+  if command -v gh >/dev/null 2>&1; then
+    printf 'gh: %s\n' "$(gh --version | head -n 1)"
+  else
+    printf 'gh: missing\n'
+  fi
+
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    printf 'git: inside work tree\n'
+    printf 'git root: %s\n' "$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  else
+    printf 'git: not inside work tree\n'
+  fi
+
+  if [ -d "$workspace" ]; then
+    printf 'workspace: %s (exists)\n' "$workspace"
+  else
+    printf 'workspace: %s (not initialized)\n' "$workspace"
+  fi
+
+  if [ -w "$(dirname "$workspace")" ]; then
+    printf 'workspace parent writable: yes\n'
+  else
+    printf 'workspace parent writable: no\n'
+  fi
+
+  if command -v blockMesh >/dev/null 2>&1 || command -v simpleFoam >/dev/null 2>&1 || command -v foamRun >/dev/null 2>&1; then
+    printf 'OpenFOAM: available\n'
+  else
+    printf 'OpenFOAM: not found\n'
+  fi
+
+  if command -v docker >/dev/null 2>&1; then
+    printf 'Docker: available\n'
+  else
+    printf 'Docker: not found\n'
+  fi
+}
+
+cmd_init() {
+  local workspace
+  workspace="$(workspace_from_args "$@")"
+  ensure_workspace "$workspace"
+  cat > "$workspace/state/workspace.json" <<EOF
+{
+  "version": "$VERSION",
+  "workspace": "$(json_escape "$workspace")",
+  "createdBy": "gh-physics-sim"
+}
+EOF
+  printf 'Initialized physics simulation workspace: %s\n' "$workspace"
+}
+
+cmd_new() {
+  local workspace case_name problem
+  workspace="$(workspace_from_args "$@")"
+  require_workspace "$workspace"
+
+  problem=""
+  case_name=""
+  local args=("$@")
+  local i=0
+  while [ "$i" -lt "${#args[@]}" ]; do
+    case "${args[$i]}" in
+      --workspace)
+        i=$((i + 1))
+        ;;
+      --case-name)
+        i=$((i + 1))
+        [ "$i" -lt "${#args[@]}" ] || die "--case-name requires a value"
+        case_name="${args[$i]}"
+        ;;
+      --*)
+        die "unknown flag: ${args[$i]}"
+        ;;
+      *)
+        if [ -z "$problem" ]; then
+          problem="${args[$i]}"
+        fi
+        ;;
+    esac
+    i=$((i + 1))
+  done
+
+  [ -n "$problem" ] || die "missing simulation problem text"
+  if [ -z "$case_name" ]; then
+    case_name="task-$(date +%Y%m%d-%H%M%S)"
+  fi
+
+  local task_dir="$workspace/tasks/$case_name"
+  mkdir -p "$task_dir"
+  cat > "$task_dir/task.json" <<EOF
+{
+  "id": "$(json_escape "$case_name")",
+  "problem": "$(json_escape "$problem")",
+  "stage": "created",
+  "mode": "mock"
+}
+EOF
+  printf '%s\n' "$case_name" > "$workspace/state/current_task"
+  printf 'Created simulation task: %s\n' "$case_name"
+}
+
+cmd_add_input() {
+  local kind="$1"
+  shift
+  local workspace
+  workspace="$(workspace_from_args "$@")"
+  require_workspace "$workspace"
+
+  local src=""
+  for arg in "$@"; do
+    case "$arg" in
+      --workspace)
+        shift
+        ;;
+      --*)
+        ;;
+      *)
+        if [ -z "$src" ]; then
+          src="$arg"
+        fi
+        ;;
+    esac
+  done
+
+  [ -n "$src" ] || die "missing input path"
+  [ -f "$src" ] || die "input file not found: $src"
+  cp "$src" "$workspace/inputs/"
+  printf 'Registered %s input: %s\n' "$kind" "$src"
+}
+
+current_task() {
+  local workspace="$1"
+  require_workspace "$workspace"
+  [ -f "$workspace/state/current_task" ] || die "no current task (run: gh physics-sim new ...)"
+  cat "$workspace/state/current_task"
+}
+
+cmd_status() {
+  local workspace task task_file
+  workspace="$(workspace_from_args "$@")"
+  task="$(current_task "$workspace")"
+  task_file="$workspace/tasks/$task/task.json"
+  [ -f "$task_file" ] || die "task file missing: $task_file"
+  printf 'Current task: %s\n' "$task"
+  cat "$task_file"
+}
+
+write_stage_artifact() {
+  local workspace="$1"
+  local stage="$2"
+  local file="$3"
+  ensure_workspace "$workspace"
+  printf '%s\n' "$stage" > "$workspace/state/last_stage"
+  printf '%s\n' "$stage" > "$file"
+}
+
+cmd_stage() {
+  local stage="$1"
+  shift
+  bridge "$stage" "$@"
+}
+
+main() {
+  local cmd="${1:-help}"
+  if [ "$#" -gt 0 ]; then
+    shift
+  fi
+
+  case "$cmd" in
+    -h|--help|help)
+      usage
+      ;;
+    version)
+      printf 'gh-physics-sim %s\n' "$VERSION"
+      ;;
+    doctor)
+      cmd_doctor "$@"
+      ;;
+    init)
+      cmd_init "$@"
+      ;;
+    new)
+      cmd_new "$@"
+      ;;
+    add-file)
+      cmd_add_input "file" "$@"
+      ;;
+    add-table)
+      cmd_add_input "table" "$@"
+      ;;
+    draft|validate|generate|run|report|package)
+      cmd_stage "$cmd" "$@"
+      ;;
+    status)
+      cmd_status "$@"
+      ;;
+    *)
+      die "unknown command: $cmd"
+      ;;
+  esac
+}
+
+main "$@"

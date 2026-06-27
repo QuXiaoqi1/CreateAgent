@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "0.1.0",
+  "simulationObjective": {
+    "description": "Estimate pressure drop through a 2D straight pipe.",
+    "targets": ["pressure_drop", "velocity_profile"]
+  },
+  "physicsDomain": "cfd",
+  "governingModel": {
+    "flow": "single_phase_incompressible",
+    "time": "steady"
+  },
+  "geometry": {
+    "kind": "2d_straight_pipe",
+    "dimensions": {
+      "length": {
+        "value": 2.0,
+        "unit": "m",
+        "provenance": [{"source": "user", "sourceRef": "fixture"}]
+      },
+      "diameter": {
+        "value": 0.1,
+        "unit": "m",
+        "provenance": [{"source": "user", "sourceRef": "fixture"}]
+      }
+    }
+  },
+  "materials": [
+    {
+      "name": "air",
+      "role": "fluid",
+      "properties": {
+        "density": {
+          "value": 1.225,
+          "unit": "kg/m^3",
+          "provenance": [{"source": "user", "sourceRef": "fixture"}]
+        },
+        "dynamic_viscosity": {
+          "value": 0.000018,
+          "unit": "Pa*s",
+          "provenance": [{"source": "user", "sourceRef": "fixture"}]
+        }
+      }
+    }
+  ],
+  "initialConditions": [],
+  "boundaryConditions": [
+    {"name": "inlet", "type": "inlet", "values": {"velocity": {"value": 5.0, "unit": "m/s", "provenance": [{"source": "user", "sourceRef": "fixture"}]}}},
+    {"name": "outlet", "type": "outlet", "values": {"pressure": {"value": 0.0, "unit": "Pa", "provenance": [{"source": "user", "sourceRef": "fixture"}]}}},
+    {"name": "walls", "type": "wall", "values": {"velocity": {"value": 0.0, "unit": "m/s", "provenance": [{"source": "user", "sourceRef": "fixture"}]}}}
+  ],
+  "meshStrategy": {"method": "blockMesh", "dimension": "2d"},
+  "timeStrategy": {"mode": "steady"},
+  "solverStrategy": {"family": "openfoam", "candidate": "simpleFoam"},
+  "postprocessingTargets": [{"name": "pressure_drop"}],
+  "assumptions": [
+    {
+      "key": "isothermal_flow",
+      "value": true,
+      "rationale": "The MVP straight-pipe case ignores heat transfer.",
+      "risk": "Invalid if temperature changes materially affect density.",
+      "source": "default",
+      "approved": true
+    }
+  ],
+  "provenance": [{"source": "user", "sourceRef": "fixture"}],
+  "domainExtensions": {
+    "cfdOpenfoam": {
+      "caseFamily": "straight_pipe",
+      "flowRegime": "incompressible",
+      "dimensionality": "2d",
+      "solverFamily": "openfoam",
+      "turbulenceModel": null,
+      "transient": false
+    }
+  },
+  "validation": {"status": "draft", "issues": []}
+}

@@ -1,0 +1,26 @@
+.DS_Store
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Node/build artifacts
+node_modules/
+dist/
+build/
+
+# Local env/secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local simulation workspaces and generated packages
+gh-physics-sim/.physics-sim/
+physics-simulation-agent/release-readiness/mock-full-workflow/
+*.zip
+*.tar.gz

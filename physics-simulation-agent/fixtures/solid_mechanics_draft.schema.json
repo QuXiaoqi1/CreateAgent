@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "0.1.0",
+  "simulationObjective": {
+    "description": "Calculate beam stress under a tip load."
+  },
+  "physicsDomain": "solid-mechanics",
+  "governingModel": {
+    "equation": "linear_elasticity"
+  },
+  "geometry": {
+    "kind": "beam",
+    "dimensions": {
+      "length": {
+        "value": 1.0,
+        "unit": "m",
+        "provenance": [{"source": "user", "sourceRef": "fixture"}]
+      },
+      "height": {
+        "value": 0.05,
+        "unit": "m",
+        "provenance": [{"source": "user", "sourceRef": "fixture"}]
+      }
+    }
+  },
+  "materials": [
+    {
+      "name": "steel",
+      "role": "solid",
+      "properties": {
+        "youngs_modulus": {
+          "value": 200000000000.0,
+          "unit": "Pa",
+          "provenance": [{"source": "user", "sourceRef": "fixture"}]
+        }
+      }
+    }
+  ],
+  "initialConditions": [],
+  "boundaryConditions": [
+    {"name": "fixed_end", "type": "fixed", "values": {}},
+    {"name": "tip_load", "type": "force", "values": {"force": {"value": 100.0, "unit": "N", "provenance": [{"source": "user", "sourceRef": "fixture"}]}}}
+  ],
+  "meshStrategy": {},
+  "timeStrategy": {},
+  "solverStrategy": {},
+  "postprocessingTargets": [{"name": "maximum_stress"}],
+  "assumptions": [],
+  "provenance": [{"source": "user", "sourceRef": "fixture"}],
+  "domainExtensions": {},
+  "validation": {"status": "draft", "issues": []}
+}

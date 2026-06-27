@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "0.1.0",
+  "simulationObjective": {
+    "description": "Solve steady heat conduction in a plate."
+  },
+  "physicsDomain": "heat-transfer",
+  "governingModel": {
+    "equation": "steady_heat_conduction"
+  },
+  "geometry": {
+    "kind": "2d_plate",
+    "dimensions": {
+      "length": {
+        "value": 1.0,
+        "unit": "m",
+        "provenance": [{"source": "user", "sourceRef": "fixture"}]
+      },
+      "height": {
+        "value": 0.2,
+        "unit": "m",
+        "provenance": [{"source": "user", "sourceRef": "fixture"}]
+      }
+    }
+  },
+  "materials": [
+    {
+      "name": "aluminum",
+      "role": "solid",
+      "properties": {
+        "thermal_conductivity": {
+          "value": 205.0,
+          "unit": "W/(m*K)",
+          "provenance": [{"source": "user", "sourceRef": "fixture"}]
+        }
+      }
+    }
+  ],
+  "initialConditions": [],
+  "boundaryConditions": [],
+  "meshStrategy": {},
+  "timeStrategy": {},
+  "solverStrategy": {},
+  "postprocessingTargets": [],
+  "assumptions": [],
+  "provenance": [{"source": "user", "sourceRef": "fixture"}],
+  "domainExtensions": {},
+  "validation": {"status": "draft", "issues": []}
+}

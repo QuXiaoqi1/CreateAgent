@@ -1,0 +1,22 @@
+[
+  {
+    "caseFamily": "straight_pipe",
+    "prompt": "simulate airflow through a 2D straight pipe pressure drop",
+    "table": "parameter,value,unit\nlength,2,m\ndiameter,0.1,m\ninlet_velocity,5,m/s\noutlet_pressure,0,Pa\ndensity,1.225,kg/m^3\ndynamic_viscosity,1.8e-5,Pa*s\n"
+  },
+  {
+    "caseFamily": "bent_pipe",
+    "prompt": "simulate airflow through a 2D bend pipe",
+    "table": "parameter,value,unit\ninlet_length,1,m\noutlet_length,1,m\nbend_radius,0.25,m\ndiameter,0.1,m\ninlet_velocity,5,m/s\noutlet_pressure,0,Pa\ndensity,1.225,kg/m^3\ndynamic_viscosity,1.8e-5,Pa*s\n"
+  },
+  {
+    "caseFamily": "room_ventilation",
+    "prompt": "simulate room ventilation with an inlet and outlet",
+    "table": "parameter,value,unit\nroom_length,5,m\nroom_width,3,m\ninlet_size,0.4,m\noutlet_size,0.4,m\ninlet_velocity,2,m/s\noutlet_pressure,0,Pa\ndensity,1.225,kg/m^3\ndynamic_viscosity,1.8e-5,Pa*s\n"
+  },
+  {
+    "caseFamily": "flow_around_object",
+    "prompt": "simulate flow around a cylinder wake",
+    "table": "parameter,value,unit\ndomain_length,4,m\ndomain_height,1,m\nobject_diameter,0.1,m\ninlet_velocity,5,m/s\noutlet_pressure,0,Pa\ndensity,1.225,kg/m^3\ndynamic_viscosity,1.8e-5,Pa*s\n"
+  }
+]

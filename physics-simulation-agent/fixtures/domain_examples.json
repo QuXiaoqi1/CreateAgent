@@ -1,0 +1,30 @@
+[
+  {
+    "domain": "cfd",
+    "text": "simulate airflow through a pipe with inlet velocity"
+  },
+  {
+    "domain": "heat-transfer",
+    "text": "solve steady heat conduction temperature in a plate"
+  },
+  {
+    "domain": "solid-mechanics",
+    "text": "calculate beam stress under load"
+  },
+  {
+    "domain": "pde",
+    "text": "solve the Poisson PDE on a square"
+  },
+  {
+    "domain": "multibody",
+    "text": "simulate a spring mass pendulum mechanism"
+  },
+  {
+    "domain": "multiphysics",
+    "text": "thermal structural coupled fluid structure problem"
+  },
+  {
+    "domain": "unknown",
+    "text": "make a nice plot of my data"
+  }
+]

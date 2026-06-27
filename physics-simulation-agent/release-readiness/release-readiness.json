@@ -1,0 +1,63 @@
+{
+  "generatedAt": "2026-06-26T17:19:24.965530+00:00",
+  "items": [
+    {
+      "evidence": [
+        "fixtures/cfd_golden_cases.json",
+        "fixtures/straight_pipe.schema.json",
+        "fixtures/heat_transfer_draft.schema.json",
+        "fixtures/solid_mechanics_draft.schema.json"
+      ],
+      "message": "Golden cases and draft-only fixtures are present.",
+      "name": "fixture_structure",
+      "status": "pass"
+    },
+    {
+      "evidence": [
+        "python3 -m unittest discover physics-simulation-agent/tests"
+      ],
+      "message": "Workspace, schema, intake, registry, case generation, execution, delivery, and readiness tests are present.",
+      "name": "test_surface",
+      "status": "pass"
+    },
+    {
+      "evidence": [
+        "heat_transfer_draft.schema.json: draft_only",
+        "solid_mechanics_draft.schema.json: draft_only"
+      ],
+      "message": "Heat-transfer and solid-mechanics remain draft-only.",
+      "name": "non_mvp_draft_only",
+      "status": "pass"
+    },
+    {
+      "evidence": [
+        "physics-simulation-agent/release-readiness/mock-full-workflow/delivery-package"
+      ],
+      "message": "Natural-language/table input reached a complete mock delivery package.",
+      "name": "mock_full_workflow",
+      "status": "pass"
+    },
+    {
+      "evidence": [
+        "Local OpenFOAM commands were not found.",
+        "Docker was not found, so Docker/OpenFOAM fallback is unavailable."
+      ],
+      "message": "No local OpenFOAM or Docker/OpenFOAM runtime is available; real smoke test skipped.",
+      "name": "conditional_real_openfoam_smoke",
+      "status": "skip"
+    }
+  ],
+  "limitations": [
+    "No local OpenFOAM or Docker/OpenFOAM runtime is available; real smoke test skipped.",
+    "MVP numerical credibility is limited to simple CFD/OpenFOAM golden cases."
+  ],
+  "overallStatus": "ready_with_limitations",
+  "recommendations": [
+    "Wire readiness checks into the GitHub CLI command surface.",
+    "Enable Docker/OpenFOAM image configuration before claiming container execution support.",
+    "Use heat-transfer as the next domain pack only after CFD MVP reliability is stable."
+  ],
+  "risks": [
+    "Generated simulation evidence still requires professional engineering review before operational use."
+  ]
+}

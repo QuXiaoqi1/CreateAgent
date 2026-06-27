@@ -1,0 +1,6 @@
+.physics-sim/
+logs/
+results/
+package/
+*.zip
+*.tar.gz
